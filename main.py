@@ -11,6 +11,11 @@ class Centroid():
             self.acc[i] += data[i]
             self.count += 1
 
+    def getCentroid(self):
+        return self.acc / self.count
+
+
+# Reads the database and returns the data and classes apart
 def readDatabase(filename):
     dataset = np.loadtxt('databases\\{filename}'.format(filename = filename), delimiter = ',')
 
@@ -26,6 +31,8 @@ def readDatabase(filename):
 
     return dataset, classes
 
+# Determine the classes centroids as the mean values of the data
+# in each class
 def determineCentroids(dataset, classes):
     rows, cols = np.shape(dataset)
 
@@ -40,6 +47,28 @@ def determineCentroids(dataset, classes):
 
     centroids = {}
     for key in stats:
-        centroids[key] = stats[key].acc/stats[key].count
+        centroids[key] = stats[key].getCentroid()
 
-    return centroids
+    return stats, centroids
+
+# Simple Euclidian distance between two arrays
+def euclidianDistance(a, b):    
+    diff_sqrt = [(x - y)**2 for x, y in zip(a, b)]
+
+    return np.num(diff_sqrt)
+
+# The sum of the distances between a data point and its class centroid
+# in the trainning set
+def costFunction(data, classes, centroids):
+    distances_sum = 0
+    rows, attr = np.shape(data)
+    for i, d in enumerate(data):
+        cl = classes[i]
+        class_id = str(cl) # getting the class key to refference in dict
+        distances += euclidianDistance(d, centroids[class_id])
+
+    return distances / rows
+
+d, c = readDatabase('glass.data')
+stats, centroids = determineCentroids(d, c)
+
