@@ -1,6 +1,6 @@
 import numpy as np
 import random
-import operator
+import operator 
 
 class Centroid():
     def __init__(self, cl, acc):
