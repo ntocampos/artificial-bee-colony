@@ -88,6 +88,18 @@ def fitnessFunction(dataset, classes, centroids):
 
     return fitness
 
+def rouletteWheelFunction(P):
+    p_sorted_asc = sorted(P.items(), key = operator.itemgetter(1))
+    p_sorted_desc = list(reversed(p_sorted_asc))
+
+    pick = np.random.uniform(0, 1)
+    current = 0
+    for key in p_sorted_desc:
+        current += p_sorted_desc[key]
+        if current > pick:
+            return key
+
+
 
 # Artificial Bee Colony algorithm implementation
 def ABC(dataset, classes, centroids):
@@ -118,17 +130,14 @@ def ABC(dataset, classes, centroids):
             # Generating new solution
             # centroids: numpy array
             # phi: numpy array
-            # (centroids[cl] - centroids[j]): numpy array
+            # (centroids[cl] - centroids[k]): numpy array
             # The operation will be element by element given that all the operands
             # are numpy arrays
-            new_solution = centroids[cl] + phi * (centroids[cl] - centroids[j])
             # TODO: ceil and floor of the new solution
-
-            _centroids = centroids.copy()
-            _centroids[cl] = new_solution
+            new_solution = centroids[cl] + phi * (centroids[cl] - centroids[k])
 
             # Calculate the cost of the dataset with the new centroid
-            new_solution_cost = costFunction(dataset, classes, cl, _centroids[cl])
+            new_solution_cost = costFunction(dataset, classes, cl, new_solution)
 
             # Greedy selection: comparing the new solution to the old one
             if new_solution_cost <= costFunction(dataset, classes, cl, centroids[cl]):
@@ -137,14 +146,44 @@ def ABC(dataset, classes, centroids):
                 # Increment the counter for discarted new solutions
                 C[cl] += 1
 
-            F = fitness(dataset, classes, centroids) # calculate fitness of each class
-            f_sum_arr = [val for key, val in F]
-            f_sum = np.sum(f_sum_arr)
-            P = {} # probabilities of each class
-            for key in F:
-                P[key] = F[key]/f_sum
+        F = fitness(dataset, classes, centroids) # calculate fitness of each class
+        f_sum_arr = [val for key, val in F]
+        f_sum = np.sum(f_sum_arr)
+        P = {} # probabilities of each class
+        for key in F:
+            P[key] = F[key]/f_sum
 
-            # Onlooker phase
+        # Onlooker phase
+        for cl_o in centroids:
+            selected_key = rouletteWheelFunction(P)
+
+            _keys = keys.copy() # copying to maintain the original dict
+            del _keys[selected_key]
+            k = random.choice(_keys) # getting a index k different from i
+
+            # Define phi coefficient to generate a new solution
+            phi = np.random.uniform(-1, 1, n_attr)
+
+            # Generating new solution
+            # centroids: numpy array
+            # phi: numpy array
+            # (centroids[selected_key] - centroids[k]): numpy array
+            # The operation will be element by element given that all the operands
+            # are numpy arrays
+            new_solution = centroids[selected_key] + phi * (centroids[selected_key] - centroids[k])
+            # TODO: ceil and floor of the new solution
+
+            # Calculate the cost of the dataset with the new centroid
+            new_solution_cost = costFunction(dataset, classes, selected_key, new_solution)
+
+            # Greedy selection: comparing the new solution to the old one
+            if new_solution_cost <= costFunction(dataset, classes, selected_key, centroids[selected_key]):
+                centroids[cl] = new_solution
+            else: 
+                # Increment the counter for discarted new solutions
+                C[cl] += 1
+
+
 
 
 d, c = readDatabase('glass.data')
